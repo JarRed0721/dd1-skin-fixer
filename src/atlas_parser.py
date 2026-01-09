@@ -1,9 +1,20 @@
 with open(r"C:\NonSYSFile\Gam\Mod\DarkestDungeon\ResolutionProject\atlas\anim\crusader.sprite.idle.atlas") as f:
     lines = f.readlines()
     sprites = []
+    
     pngFile = lines[1].strip()
-    sheetWidth, sheetHeight = lines[2].split(":")[1].strip().split(",")
-    spriteSheet = {"sheetWidth" : int(sheetWidth), "sheetHeight" : int(sheetHeight)}
+    width, height = lines[2].split(":")[1].strip().split(",")
+    sheetWidth = int(width)
+    sheetHeight = int(height)
+    spriteSheet = {"sheetWidth" : sheetWidth, "sheetHeight" : sheetHeight}
+
+    if sheetWidth > sheetHeight:
+        scale = 800 / sheetWidth
+    else:
+        scale = 800 / sheetHeight
+
+    # print(scale)
+    # print(sheetHeight * scale, sheetWidth * scale)
 
     # line.startswith(" ") to check for leading space
     # ":" in line to check if a line contains a colon
@@ -25,6 +36,19 @@ with open(r"C:\NonSYSFile\Gam\Mod\DarkestDungeon\ResolutionProject\atlas\anim\cr
                     sprite["width"] = int(width)
                     sprite["height"] = int(height)
                     sprites.append(sprite)
-    print(pngFile)
-    print(spriteSheet)
-    print(sprites)
+    
+    # print(pngFile)
+    # print(spriteSheet)
+    # print(sprites)
+
+    for index in range(len(sprites)):
+        sprite = sprites[index]
+        for key in ["x", "y", "width", "height"]:
+            sprite[key] = int(sprite[key] * scale)
+
+    spriteSheet["sheetWidth"] = sheetWidth * scale
+    spriteSheet["sheetHeight"] = sheetHeight * scale
+
+print(sprites)
+print(spriteSheet)
+    
