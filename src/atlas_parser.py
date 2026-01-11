@@ -1,4 +1,12 @@
-with open(r"C:\NonSYSFile\Gam\Mod\DarkestDungeon\ResolutionProject\atlas\anim\crusader.sprite.idle.atlas") as f:
+from PIL import Image
+import os
+
+atlasPath = r"C:\NonSYSFile\Gam\Mod\DarkestDungeon\ResolutionProject\atlas\anim\crusader.sprite.idle.atlas"
+pngFolder = r"C:\NonSYSFile\Gam\Mod\DarkestDungeon\ResolutionProject\anim"
+outputFolder = r"C:\NonSYSFile\Gam\Mod\DarkestDungeon\ResolutionProject\output"
+atlasName = os.path.basename(atlasPath)
+
+with open(atlasPath) as f:
     
     #list lines: list of each lines in the atlas file
     lines = f.readlines()
@@ -49,13 +57,18 @@ with open(r"C:\NonSYSFile\Gam\Mod\DarkestDungeon\ResolutionProject\atlas\anim\cr
     spriteSheet["sheetWidth"] = sheetWidth * scale
     spriteSheet["sheetHeight"] = sheetHeight * scale
 
+#Dynamic input and output path
+pngInputPath = os.path.join(pngFolder, pngFile)
+outputFilePath = os.path.join(outputFolder, pngFile)
+outputAtlasPath = os.path.join(outputFolder, atlasName)
+
 # (empty line)
 # crusader.sprite.idle.png
 # size: 800,800
 # format: RGBA8888
 # filter: Linear,Linear
 # repeat: none
-with open("output.atlas", "w") as f:
+with open(outputAtlasPath, "w") as f:
     f.write("\n")
     f.write(f"{pngFile}\n")
     f.write(f"size: {round(spriteSheet['sheetWidth'])},{round(spriteSheet['sheetHeight'])}\n")
@@ -78,3 +91,8 @@ with open("output.atlas", "w") as f:
         f.write(f"  orig: {sprite["width"]},{sprite["height"]}\n")
         f.write("  offset: 0, 0\n")
         f.write("  index: -1\n")
+
+#Resizes the PNG
+img = Image.open(pngInputPath)
+new_img = img.resize((round(spriteSheet['sheetWidth']), round(spriteSheet['sheetHeight'])))
+new_img.save(outputFilePath)
