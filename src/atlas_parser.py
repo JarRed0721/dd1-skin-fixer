@@ -1,8 +1,9 @@
 from PIL import Image
 import os
+import numpy as np
 
-mod_folder = r"C:\NonSYSFile\Gam\Mod\DarkestDungeon\ResolutionProject\Profaned Knight NSFW Test"
-output_folder = r"C:\NonSYSFile\Gam\Mod\DarkestDungeon\ResolutionProject\output"
+mod_folder = r"C:\NonSYSFile\Gam\Mod\DarkestDungeon\ResolutionProject\2979505704"
+output_folder = r"C:\NonSYSFile\Gam\Mod\DarkestDungeon\ResolutionProject\output1"
 
 def find_skin_mod_structure(mod_folder: str) -> dict:
     """
@@ -152,7 +153,7 @@ def process_atlas(atlas_path: str, output_folder: str) -> dict:
 
     return sprite_sheet
 
-def resize_png(png_folder:str, output_folder: str, sprite_sheet: dict) -> None:
+def resize_png(png_folder: str, output_folder: str, sprite_sheet: dict) -> None:
     """
     Process the corresponding PNG of an atlas file.
     Resize the PNG with the sprite sheet info provided by the atlas file.
@@ -161,17 +162,16 @@ def resize_png(png_folder:str, output_folder: str, sprite_sheet: dict) -> None:
         png_folder: Folder containing the source PNG file
         output_folder: Folder where output files will be saved
         sprite_sheet: Dict that stores the information of an atlas file
-
     """
     # Dynamic input and output paths
     output_variant_folder = os.path.join(output_folder, os.path.basename(os.path.dirname(png_folder)), "anim")
     os.makedirs(output_variant_folder, exist_ok=True)
-    output_png_path = os.path.join(os.path.join(output_variant_folder, sprite_sheet.get("png_file")))
+    output_png_path = os.path.join(output_variant_folder, sprite_sheet.get("png_file"))
     
-    #Resize PNG
+    # Resize PNG
     png_input_path = os.path.join(png_folder, sprite_sheet.get("png_file"))
-    img = Image.open(png_input_path)
-    new_img = img.resize((round(sprite_sheet['sheet_width']), round(sprite_sheet['sheet_height'])))
+    img = Image.open(png_input_path).convert('RGBA')
+    new_img = img.resize((round(sprite_sheet['sheet_width']), round(sprite_sheet['sheet_height'])), Image.LANCZOS)
     new_img.save(output_png_path)
 
     print(f"  Image Saved to: {output_variant_folder}")
