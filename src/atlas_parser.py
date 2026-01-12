@@ -33,10 +33,13 @@ def process_atlas(atlas_path: str, png_folder: str, output_folder: str) -> None:
         # The width and height of the whole sprite sheet
         sprite_sheet = {"sheet_width": sheet_width, "sheet_height": sheet_height}
 
-        if sheet_width > sheet_height:
-            scale = TARGET_SIZE / sheet_width
-        else:
-            scale = TARGET_SIZE / sheet_height
+        larger_dimension = max(sheet_width, sheet_height)
+
+        if larger_dimension <= TARGET_SIZE:
+            print(f"Skipping {atlas_name}: resolution already small enough")
+            return
+        
+        scale = TARGET_SIZE / larger_dimension
 
         # line.startswith(" ") to check for leading space
         # ":" in line to check if a line contains a colon
