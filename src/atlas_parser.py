@@ -33,6 +33,9 @@ def process_atlas(atlas_path: str, png_folder: str, output_folder: str) -> None:
         # The width and height of the whole sprite sheet
         sprite_sheet = {"sheet_width": sheet_width, "sheet_height": sheet_height}
 
+        print(f"Processing: {atlas_name}")
+        print(f"  Original size: {sheet_width} x {sheet_height}")
+
         larger_dimension = max(sheet_width, sheet_height)
 
         if larger_dimension <= TARGET_SIZE:
@@ -40,6 +43,8 @@ def process_atlas(atlas_path: str, png_folder: str, output_folder: str) -> None:
             return
         
         scale = TARGET_SIZE / larger_dimension
+
+        print(f"  Scale factor: {scale:.3f}")
 
         # line.startswith(" ") to check for leading space
         # ":" in line to check if a line contains a colon
@@ -114,6 +119,9 @@ def process_atlas(atlas_path: str, png_folder: str, output_folder: str) -> None:
     new_img = img.resize((round(sprite_sheet['sheet_width']), round(sprite_sheet['sheet_height'])))
     new_img.save(output_file_path)
 
+    print(f"  Output size: {round(sprite_sheet['sheet_width'])} x {round(sprite_sheet['sheet_height'])}")
+    print(f"  Saved to: {output_folder}")
+
 def process_mod(atlas_folder: str, png_folder: str, output_folder: str) -> None:
     """
     Process all atlas files that are needed to fix.
@@ -133,4 +141,4 @@ def process_mod(atlas_folder: str, png_folder: str, output_folder: str) -> None:
             atlas_path = os.path.join(atlas_folder, f)
             process_atlas(atlas_path, png_folder, output_folder)
 
-process_mod(atlas_folder)
+process_mod(atlas_folder, png_folder, output_folder)
