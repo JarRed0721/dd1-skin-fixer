@@ -1,7 +1,7 @@
 from PIL import Image
 import os
 
-atlas_path = r"C:\NonSYSFile\Gam\Mod\DarkestDungeon\ResolutionProject\atlas\anim\crusader.sprite.idle.atlas"
+atlas_folder = r"C:\NonSYSFile\Gam\Mod\DarkestDungeon\ResolutionProject\atlas\anim"
 png_folder = r"C:\NonSYSFile\Gam\Mod\DarkestDungeon\ResolutionProject\anim"
 output_folder = r"C:\NonSYSFile\Gam\Mod\DarkestDungeon\ResolutionProject\output"
 
@@ -111,4 +111,23 @@ def process_atlas(atlas_path: str, png_folder: str, output_folder: str) -> None:
     new_img = img.resize((round(sprite_sheet['sheet_width']), round(sprite_sheet['sheet_height'])))
     new_img.save(output_file_path)
 
-process_atlas(atlas_path, png_folder, output_folder)
+def process_mod(atlas_folder: str, png_folder: str, output_folder: str) -> None:
+    """
+    Process all atlas files that are needed to fix.
+    Walk through all of the atlas files in the provided folder,
+    Parse only required atlas file through calling process_atlas.
+
+    Args:
+        atlas_folder: Folder that stores all atlas files.
+        png_folder: Folder containing the source PNG files.
+        output_folder: Folder where output files will be saved.
+    """
+    target_suffixes = [".sprite.combat.atlas", ".sprite.walk.atlas", ".sprite.idle.atlas"]
+    files = os.listdir(atlas_folder)
+    
+    for f in files:
+        if any(f.endswith(suffix) for suffix in target_suffixes):
+            atlas_path = os.path.join(atlas_folder, f)
+            process_atlas(atlas_path, png_folder, output_folder)
+
+process_mod(atlas_folder)
