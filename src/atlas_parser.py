@@ -5,6 +5,9 @@ import numpy as np
 mod_folder = r"C:\NonSYSFile\Gam\Mod\DarkestDungeon\ResolutionProject\2979505704"
 output_folder = r"C:\NonSYSFile\Gam\Mod\DarkestDungeon\ResolutionProject\output1"
 
+# mod_folder = r"C:\NonSYSFile\Gam\Mod\DarkestDungeon\ResolutionProject\Profaned Knight NSFW Test"
+# output_folder = r"C:\NonSYSFile\Gam\Mod\DarkestDungeon\ResolutionProject\output"
+
 def find_skin_mod_structure(mod_folder: str) -> dict:
     """
     Analyze a hero reskin mod folder and return its structure.
@@ -171,7 +174,19 @@ def resize_png(png_folder: str, output_folder: str, sprite_sheet: dict) -> None:
     # Resize PNG
     png_input_path = os.path.join(png_folder, sprite_sheet.get("png_file"))
     img = Image.open(png_input_path).convert('RGBA')
-    new_img = img.resize((round(sprite_sheet['sheet_width']), round(sprite_sheet['sheet_height'])), Image.LANCZOS)
+    arr = np.array(img)
+
+    transparent_mask = arr[:, :, 3] < 255
+    arr[transparent_mask, 0] = 0  # R
+    arr[transparent_mask, 1] = 0  # G
+    arr[transparent_mask, 2] = 0  # B
+
+    low_alpha_mask = arr[:, :, 3] < 32
+    arr[low_alpha_mask, 3] = 0
+
+    img = Image.fromarray(arr, 'RGBA')
+
+    new_img = img.resize((round(sprite_sheet['sheet_width']), round(sprite_sheet['sheet_height'])))
     new_img.save(output_png_path)
 
     print(f"  Image Saved to: {output_variant_folder}")
