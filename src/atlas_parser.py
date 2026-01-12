@@ -1,20 +1,51 @@
 from PIL import Image
 import os
 
-atlas_folder = r"C:\NonSYSFile\Gam\Mod\DarkestDungeon\ResolutionProject\atlas\anim"
-png_folder = r"C:\NonSYSFile\Gam\Mod\DarkestDungeon\ResolutionProject\anim"
+mod_folder = r"C:\NonSYSFile\Gam\Mod\DarkestDungeon\ResolutionProject\Profaned Knight NSFW Test"
 output_folder = r"C:\NonSYSFile\Gam\Mod\DarkestDungeon\ResolutionProject\output"
 
-def process_atlas(atlas_path: str, png_folder: str, output_folder: str) -> None:
+def find_skin_mod_structure(mod_folder: str) -> dict:
     """
-    Process a single atlas file and its corresponding PNG.
-    Parses the atlas file, calculates scale factor, resizes the PNG,
-    and outputs both scaled files to the output folder.
+    Analyze a hero reskin mod folder and return its structure.
+    
+    Args:
+        mod_folder: Path to the root of the mod folder
+        
+    Returns:
+        Dictionary containing:
+        - atlas_folder: Path to atlas files
+        - png_variant_folders: List of paths to PNG variant folders
+        - is_type_a: Whether this mod has custom atlas files
+    """
+    png_variant_folders = []
+    atlas_folder = None
+
+    for root, dirs, files in os.walk(mod_folder):
+            if any(f.endswith('.atlas') for f in files) and os.path.basename(root) == "anim":
+                atlas_folder = root
+            elif any(f.endswith('_portrait_roster.png') for f in files):
+                png_folder = os.path.join(root, "anim")
+                png_variant_folders.append(png_folder)
+
+    return {
+        "atlas_folder": atlas_folder,
+        "png_variant_folders": png_variant_folders,
+        "is_type_a": atlas_folder is not None
+    }
+
+def process_atlas(atlas_path: str, output_folder: str) -> dict:
+    """
+    Process a single atlas file.
+    Parses the atlas file, calculates scale factor,
+    and outputs the scaled atlas file to the output folder.
     
     Args:
         atlas_path: Full path to the .atlas file
-        png_folder: Folder containing the source PNG file
         output_folder: Folder where output files will be saved
+
+    Returns:
+        Dict that stores the information of an atlas file
+
     """
     with open(atlas_path) as f:
         atlas_name = os.path.basename(atlas_path)
@@ -76,11 +107,13 @@ def process_atlas(atlas_path: str, png_folder: str, output_folder: str) -> None:
 
         sprite_sheet["sheet_width"] = sheet_width * scale
         sprite_sheet["sheet_height"] = sheet_height * scale
+        sprite_sheet["scale"] = scale
+        sprite_sheet["png_file"] = png_file
 
     # Dynamic input and output paths
-    png_input_path = os.path.join(png_folder, png_file)
-    output_file_path = os.path.join(output_folder, png_file)
-    output_atlas_path = os.path.join(output_folder, atlas_name)
+    output_atlas_folder = os.path.join(output_folder, "anim")
+    os.makedirs(output_atlas_folder, exist_ok=True)
+    output_atlas_path = os.path.join(output_atlas_folder, atlas_name)
 
     # Atlas file header format:
     # (empty line)
@@ -114,31 +147,67 @@ def process_atlas(atlas_path: str, png_folder: str, output_folder: str) -> None:
             f.write("  offset: 0, 0\n")
             f.write("  index: -1\n")
 
-    # Resize the PNG
-    img = Image.open(png_input_path)
-    new_img = img.resize((round(sprite_sheet['sheet_width']), round(sprite_sheet['sheet_height'])))
-    new_img.save(output_file_path)
-
     print(f"  Output size: {round(sprite_sheet['sheet_width'])} x {round(sprite_sheet['sheet_height'])}")
-    print(f"  Saved to: {output_folder}")
+    print(f"  Atlas Saved to: {output_atlas_folder}")
 
-def process_mod(atlas_folder: str, png_folder: str, output_folder: str) -> None:
+    return sprite_sheet
+
+def resize_png(png_folder:str, output_folder: str, sprite_sheet: dict) -> None:
     """
-    Process all atlas files that are needed to fix.
-    Walk through all of the atlas files in the provided folder,
-    Parse only required atlas file through calling process_atlas.
+    Process the corresponding PNG of an atlas file.
+    Resize the PNG with the sprite sheet info provided by the atlas file.
 
     Args:
-        atlas_folder: Folder that stores all atlas files.
-        png_folder: Folder containing the source PNG files.
+        png_folder: Folder containing the source PNG file
+        output_folder: Folder where output files will be saved
+        sprite_sheet: Dict that stores the information of an atlas file
+
+    """
+    # Dynamic input and output paths
+    output_variant_folder = os.path.join(output_folder, os.path.basename(os.path.dirname(png_folder)), "anim")
+    os.makedirs(output_variant_folder, exist_ok=True)
+    output_png_path = os.path.join(os.path.join(output_variant_folder, sprite_sheet.get("png_file")))
+    
+    #Resize PNG
+    png_input_path = os.path.join(png_folder, sprite_sheet.get("png_file"))
+    img = Image.open(png_input_path)
+    new_img = img.resize((round(sprite_sheet['sheet_width']), round(sprite_sheet['sheet_height'])))
+    new_img.save(output_png_path)
+
+    print(f"  Image Saved to: {output_variant_folder}")
+
+def process_mod(mod_folder: str, output_folder: str) -> None:
+    """
+    Process all atlas files and its corresponding PNG that are needed to fix in a mod.
+    Walk through all of the atlas files in the mod folder,
+    parse only required atlas file through calling process_atlas.
+    Resize all corresponding PNG by calling resize_png.
+
+    Args:
+        mod_folder: Path to the root of the mod folder
         output_folder: Folder where output files will be saved.
     """
-    target_suffixes = [".sprite.combat.atlas", ".sprite.walk.atlas", ".sprite.idle.atlas"]
-    files = os.listdir(atlas_folder)
-    
-    for f in files:
-        if any(f.endswith(suffix) for suffix in target_suffixes):
-            atlas_path = os.path.join(atlas_folder, f)
-            process_atlas(atlas_path, png_folder, output_folder)
+    mod_structure = find_skin_mod_structure(mod_folder)
 
-process_mod(atlas_folder, png_folder, output_folder)
+    if not mod_structure.get("is_type_a"):
+        print("Skin does not have custom spine, no need to fix!")
+        return
+    else:
+        atlas_folder = mod_structure.get("atlas_folder")
+        png_variant_folders = mod_structure.get("png_variant_folders")
+        target_suffixes = [".sprite.combat.atlas", ".sprite.walk.atlas", ".sprite.idle.atlas"]
+        atlas_files = os.listdir(atlas_folder)
+
+        for atlas in atlas_files:
+            if any(atlas.endswith(suffix) for suffix in target_suffixes):
+                atlas_path = os.path.join(atlas_folder, atlas)
+                sprite_sheet = process_atlas(atlas_path, output_folder)
+                
+                if sprite_sheet is None:
+                    continue
+
+                for png_folder in png_variant_folders:
+                    resize_png(png_folder, output_folder, sprite_sheet)
+            
+
+process_mod(mod_folder, output_folder)
