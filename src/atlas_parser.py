@@ -1,12 +1,13 @@
 from PIL import Image
 import os
 import numpy as np
+import shutil
 
-mod_folder = r"C:\NonSYSFile\Gam\Mod\DarkestDungeon\ResolutionProject\2979505704"
-output_folder = r"C:\NonSYSFile\Gam\Mod\DarkestDungeon\ResolutionProject\output1"
+# mod_folder = r"C:\NonSYSFile\Gam\Mod\DarkestDungeon\ResolutionProject\2979505704"
+# output_folder = r"C:\NonSYSFile\Gam\Mod\DarkestDungeon\ResolutionProject\output1"
 
-# mod_folder = r"C:\NonSYSFile\Gam\Mod\DarkestDungeon\ResolutionProject\Profaned Knight NSFW Test"
-# output_folder = r"C:\NonSYSFile\Gam\Mod\DarkestDungeon\ResolutionProject\output"
+mod_folder = r"C:\NonSYSFile\Gam\Mod\DarkestDungeon\ResolutionProject\Profaned Knight NSFW Test"
+output_folder = r"C:\NonSYSFile\Gam\Mod\DarkestDungeon\ResolutionProject\output"
 
 def find_skin_mod_structure(mod_folder: str) -> dict:
     """
@@ -191,6 +192,45 @@ def resize_png(png_folder: str, output_folder: str, sprite_sheet: dict) -> None:
 
     print(f"  Image Saved to: {output_variant_folder}")
 
+def create_backup(mod_folder: str) -> None:
+    """
+    Create backup of the heroes folder before processing.
+    
+    Args:
+        mod_folder: Root folder of the mod
+    
+    Returns:
+        True if backup was created, False if backup already exists
+    """
+    heroes_folder = os.path.join(mod_folder, "heroes")
+    backup_folder = os.path.join(mod_folder, "backup")
+    
+    if os.path.exists(backup_folder):
+        print(f"Backup already exists at {backup_folder}, skipping backup")
+        return False
+    
+    shutil.copytree(heroes_folder, backup_folder)
+    print(f"Backup created at {backup_folder}")
+    return True
+
+def restore_backup(mod_folder: str) -> None:
+    """
+    Restore the heroes folder from backup.
+    
+    Args:
+        mod_folder: Root folder of the mod
+    
+    """
+    heroes_folder = os.path.join(mod_folder, "heroes")
+    backup_folder = os.path.join(mod_folder, "backup")
+
+    create_backup(mod_folder)
+    shutil.rmtree(heroes_folder)
+    shutil.copytree(backup_folder, heroes_folder)
+    shutil.rmtree(backup_folder)
+
+    print("Mod restored!")
+
 def process_mod(mod_folder: str, output_folder: str) -> None:
     """
     Process all atlas files and its corresponding PNG that are needed to fix in a mod.
@@ -202,6 +242,9 @@ def process_mod(mod_folder: str, output_folder: str) -> None:
         mod_folder: Path to the root of the mod folder
         output_folder: Folder where output files will be saved.
     """
+
+    create_backup(mod_folder)
+
     mod_structure = find_skin_mod_structure(mod_folder)
 
     if not mod_structure.get("is_type_a"):
