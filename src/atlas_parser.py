@@ -4,10 +4,7 @@ import numpy as np
 import shutil
 
 # mod_folder = r"C:\NonSYSFile\Gam\Mod\DarkestDungeon\ResolutionProject\2979505704"
-# output_folder = r"C:\NonSYSFile\Gam\Mod\DarkestDungeon\ResolutionProject\output1"
-
-mod_folder = r"C:\NonSYSFile\Gam\Mod\DarkestDungeon\ResolutionProject\Profaned Knight NSFW Test"
-output_folder = r"C:\NonSYSFile\Gam\Mod\DarkestDungeon\ResolutionProject\output"
+# mod_folder = r"C:\NonSYSFile\Gam\Mod\DarkestDungeon\ResolutionProject\Profaned Knight NSFW Test"
 
 def find_skin_mod_structure(mod_folder: str) -> dict:
     """
@@ -26,7 +23,9 @@ def find_skin_mod_structure(mod_folder: str) -> dict:
     atlas_folder = None
 
     for root, dirs, files in os.walk(mod_folder):
-            if any(f.endswith('.atlas') for f in files) and os.path.basename(root) == "anim":
+            if 'backup' in dirs:
+                dirs.remove('backup')
+            elif any(f.endswith('.atlas') for f in files) and os.path.basename(root) == "anim":
                 atlas_folder = root
             elif any(f.endswith('_portrait_roster.png') for f in files):
                 png_folder = os.path.join(root, "anim")
@@ -38,7 +37,7 @@ def find_skin_mod_structure(mod_folder: str) -> dict:
         "is_type_a": atlas_folder is not None
     }
 
-def process_atlas(atlas_path: str, output_folder: str) -> dict:
+def process_atlas(atlas_path: str) -> dict:
     """
     Process a single atlas file.
     Parses the atlas file, calculates scale factor,
@@ -46,7 +45,6 @@ def process_atlas(atlas_path: str, output_folder: str) -> dict:
     
     Args:
         atlas_path: Full path to the .atlas file
-        output_folder: Folder where output files will be saved
 
     Returns:
         Dict that stores the information of an atlas file
@@ -116,9 +114,9 @@ def process_atlas(atlas_path: str, output_folder: str) -> dict:
         sprite_sheet["png_file"] = png_file
 
     # Dynamic input and output paths
-    output_atlas_folder = os.path.join(output_folder, "anim")
-    os.makedirs(output_atlas_folder, exist_ok=True)
-    output_atlas_path = os.path.join(output_atlas_folder, atlas_name)
+    # output_atlas_folder = os.path.join(atlas_path, "anim")
+    # os.makedirs(output_atlas_folder, exist_ok=True)
+    # output_atlas_path = os.path.join(output_atlas_folder, atlas_name)
 
     # Atlas file header format:
     # (empty line)
@@ -127,7 +125,7 @@ def process_atlas(atlas_path: str, output_folder: str) -> dict:
     # format: RGBA8888
     # filter: Linear,Linear
     # repeat: none
-    with open(output_atlas_path, "w") as f:
+    with open(atlas_path, "w") as f:
         f.write("\n")
         f.write(f"{png_file}\n")
         f.write(f"size: {round(sprite_sheet['sheet_width'])},{round(sprite_sheet['sheet_height'])}\n")
@@ -153,11 +151,11 @@ def process_atlas(atlas_path: str, output_folder: str) -> dict:
             f.write("  index: -1\n")
 
     print(f"  Output size: {round(sprite_sheet['sheet_width'])} x {round(sprite_sheet['sheet_height'])}")
-    print(f"  Atlas Saved to: {output_atlas_folder}")
+    print(f"  Atlas Saved to: {atlas_path}")
 
     return sprite_sheet
 
-def resize_png(png_folder: str, output_folder: str, sprite_sheet: dict) -> None:
+def resize_png(png_folder: str, sprite_sheet: dict) -> None:
     """
     Process the corresponding PNG of an atlas file.
     Resize the PNG with the sprite sheet info provided by the atlas file.
@@ -168,9 +166,7 @@ def resize_png(png_folder: str, output_folder: str, sprite_sheet: dict) -> None:
         sprite_sheet: Dict that stores the information of an atlas file
     """
     # Dynamic input and output paths
-    output_variant_folder = os.path.join(output_folder, os.path.basename(os.path.dirname(png_folder)), "anim")
-    os.makedirs(output_variant_folder, exist_ok=True)
-    output_png_path = os.path.join(output_variant_folder, sprite_sheet.get("png_file"))
+    output_png_path = os.path.join(png_folder, sprite_sheet.get("png_file"))
     
     # Resize PNG
     png_input_path = os.path.join(png_folder, sprite_sheet.get("png_file"))
@@ -190,7 +186,7 @@ def resize_png(png_folder: str, output_folder: str, sprite_sheet: dict) -> None:
     new_img = img.resize((round(sprite_sheet['sheet_width']), round(sprite_sheet['sheet_height'])))
     new_img.save(output_png_path)
 
-    print(f"  Image Saved to: {output_variant_folder}")
+    print(f"  Image Saved to: {output_png_path}")
 
 def create_backup(mod_folder: str) -> None:
     """
@@ -231,7 +227,7 @@ def restore_backup(mod_folder: str) -> None:
 
     print("Mod restored!")
 
-def process_mod(mod_folder: str, output_folder: str) -> None:
+def process_mod(mod_folder: str) -> None:
     """
     Process all atlas files and its corresponding PNG that are needed to fix in a mod.
     Walk through all of the atlas files in the mod folder,
@@ -240,7 +236,6 @@ def process_mod(mod_folder: str, output_folder: str) -> None:
 
     Args:
         mod_folder: Path to the root of the mod folder
-        output_folder: Folder where output files will be saved.
     """
 
     create_backup(mod_folder)
@@ -259,13 +254,21 @@ def process_mod(mod_folder: str, output_folder: str) -> None:
         for atlas in atlas_files:
             if any(atlas.endswith(suffix) for suffix in target_suffixes):
                 atlas_path = os.path.join(atlas_folder, atlas)
-                sprite_sheet = process_atlas(atlas_path, output_folder)
+                sprite_sheet = process_atlas(atlas_path)
                 
                 if sprite_sheet is None:
                     continue
 
                 for png_folder in png_variant_folders:
-                    resize_png(png_folder, output_folder, sprite_sheet)
-            
+                    resize_png(png_folder, sprite_sheet)
 
-process_mod(mod_folder, output_folder)
+def process_multiple_mods(mod_folders: list) -> None:
+    """
+    Process all the mods in the provided mod folder
+
+    Args:
+        mod_folders: list of single mod folders in the whole mod folder
+    """
+
+    for mod_folder in mod_folders:
+        process_mod(mod_folder)
