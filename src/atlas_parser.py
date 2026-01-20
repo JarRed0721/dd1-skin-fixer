@@ -1,10 +1,6 @@
 from PIL import Image
 import os
-import numpy as np
 import shutil
-
-# mod_folder = r"C:\NonSYSFile\Gam\Mod\DarkestDungeon\ResolutionProject\2979505704"
-# mod_folder = r"C:\NonSYSFile\Gam\Mod\DarkestDungeon\ResolutionProject\Profaned Knight NSFW Test"
 
 def find_skin_mod_structure(mod_folder: str) -> dict:
     """
@@ -53,7 +49,7 @@ def process_atlas(atlas_path: str) -> dict:
     with open(atlas_path) as f:
         atlas_name = os.path.basename(atlas_path)
         # Target size of PNG that fixes the aliasing
-        TARGET_SIZE = 650
+        TARGET_SIZE = 1000
         # List of each line in the atlas file
         lines = f.readlines()
         # List of all sprites from one atlas file
@@ -113,11 +109,6 @@ def process_atlas(atlas_path: str) -> dict:
         sprite_sheet["scale"] = scale
         sprite_sheet["png_file"] = png_file
 
-    # Dynamic input and output paths
-    # output_atlas_folder = os.path.join(atlas_path, "anim")
-    # os.makedirs(output_atlas_folder, exist_ok=True)
-    # output_atlas_path = os.path.join(output_atlas_folder, atlas_name)
-
     # Atlas file header format:
     # (empty line)
     # crusader.sprite.idle.png
@@ -151,7 +142,6 @@ def process_atlas(atlas_path: str) -> dict:
             f.write("  index: -1\n")
 
     print(f"  Output size: {round(sprite_sheet['sheet_width'])} x {round(sprite_sheet['sheet_height'])}")
-    print(f"  Atlas Saved to: {atlas_path}")
 
     return sprite_sheet
 
@@ -162,31 +152,27 @@ def resize_png(png_folder: str, sprite_sheet: dict) -> None:
 
     Args:
         png_folder: Folder containing the source PNG file
-        output_folder: Folder where output files will be saved
         sprite_sheet: Dict that stores the information of an atlas file
     """
     # Dynamic input and output paths
     output_png_path = os.path.join(png_folder, sprite_sheet.get("png_file"))
-    
-    # Resize PNG
     png_input_path = os.path.join(png_folder, sprite_sheet.get("png_file"))
-    img = Image.open(png_input_path).convert('RGBA')
-    arr = np.array(img)
 
-    transparent_mask = arr[:, :, 3] < 255
-    arr[transparent_mask, 0] = 0  # R
-    arr[transparent_mask, 1] = 0  # G
-    arr[transparent_mask, 2] = 0  # B
+    img = Image.open(png_input_path)
 
-    low_alpha_mask = arr[:, :, 3] < 32
-    arr[low_alpha_mask, 3] = 0
+    new_size = (round(sprite_sheet['sheet_width']), round(sprite_sheet['sheet_height']))
 
-    img = Image.fromarray(arr, 'RGBA')
-
-    new_img = img.resize((round(sprite_sheet['sheet_width']), round(sprite_sheet['sheet_height'])))
-    new_img.save(output_png_path)
-
-    print(f"  Image Saved to: {output_png_path}")
+    #Resize RGB and Alpha separately
+    r, g, b, a = img.split()
+    rgb = Image.merge('RGB', (r, g, b))
+    rgb_resized = rgb.resize(new_size)
+    
+    a_resized = a.resize(new_size)
+    
+    r2, g2, b2 = rgb_resized.split()
+    final_img = Image.merge('RGBA', (r2, g2, b2, a_resized))
+    
+    final_img.save(output_png_path)
 
 def create_backup(mod_folder: str) -> None:
     """
@@ -248,8 +234,7 @@ def process_mod(mod_folder: str) -> dict:
         mod_structure = find_skin_mod_structure(mod_folder)
 
         if not mod_structure.get("is_type_a"):
-            print("Skin does not have custom spine, no need to fix!")
-            return {"status": "skipped", "mod_name": mod_name, "reason": "No custom spine"}
+            return {"status": "skipped", "mod_name": mod_name, "reason": "No custom spine or not a skin mod"}
         else:
             atlas_folder = mod_structure.get("atlas_folder")
             png_variant_folders = mod_structure.get("png_variant_folders")

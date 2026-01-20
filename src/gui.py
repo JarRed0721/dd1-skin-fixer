@@ -14,6 +14,7 @@ class ModFixerApp(tk.Tk):
         super().__init__()
         self.title(window_title)
         self.geometry(window_size)
+        self.iconbitmap("assets/preview_icon.ico")
         self.resizable(False, False)
         self.setup_widgets()
     
