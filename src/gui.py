@@ -3,9 +3,10 @@ from tkinter import filedialog
 from tkinter import messagebox
 import atlas_parser as atlas
 import os
+import ctypes
 
 window_title = "DD1 Skin Mod Fixer"
-window_size = "450x460"
+window_size = "545x150"
 
 class ModFixerApp(tk.Tk):
 
@@ -13,23 +14,30 @@ class ModFixerApp(tk.Tk):
         super().__init__()
         self.title(window_title)
         self.geometry(window_size)
+        self.resizable(False, False)
         self.setup_widgets()
     
     def setup_widgets(self):
-        self.mod_path_label = tk.Label(self, text = "Mod Folder: Please provide the mod folder path here.")
-        self.mod_path_label.pack()
+        self.mod_path_label = tk.Label(self, text = "Mod Folder:")
+        self.mod_path_label.pack(padx=(38, 10), pady=(10, 0), anchor="w")
+
+        self.path_frame = tk.Frame(self)
+        self.path_frame.pack(padx=10, pady=0)        
         
-        self.mod_path_entry = tk.Entry(self)
-        self.mod_path_entry.pack()
+        self.mod_path_entry = tk.Entry(self.path_frame, width=40)
+        self.mod_path_entry.pack(side="left", padx=(0, 10), pady=5)
 
-        self.process_mod_button = tk.Button(self, text="Process all the mods in the mod folder", command = self.on_process_click)
-        self.process_mod_button.pack()
+        self.button_frame = tk.Frame(self)
+        self.button_frame.pack(padx=10, pady=3)
 
-        self.restore_button = tk.Button(self, text="Restore the mod", command = self.on_restore_click)
-        self.restore_button.pack()
+        self.restore_button = tk.Button(self.button_frame, text="Restore the mod", width=22, command = self.on_restore_click)
+        self.restore_button.pack(side="left", padx=(10, 25), pady=5)
 
-        self.browse_button = tk.Button(self, text="Browse", command=self.on_browse_click)
-        self.browse_button.pack()
+        self.process_mod_button = tk.Button(self.button_frame, text="Process Mod Folder", width=22, command = self.on_process_click)
+        self.process_mod_button.pack(side="left", padx=(24, 10), pady=5)
+
+        self.browse_button = tk.Button(self.path_frame, text="Browse", width=8, command=self.on_browse_click)
+        self.browse_button.pack(side="left", padx=5, pady=5)
 
     def on_process_click(self):
         parent_folder = self.mod_path_entry.get()
@@ -106,6 +114,8 @@ class ModFixerApp(tk.Tk):
         if folder:
             self.mod_path_entry.delete(0, "end")
             self.mod_path_entry.insert(0, folder)
+
+ctypes.windll.shcore.SetProcessDpiAwareness(1)
 
 if __name__ == "__main__":
     app = ModFixerApp()
