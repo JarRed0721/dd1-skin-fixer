@@ -227,7 +227,7 @@ def restore_backup(mod_folder: str) -> None:
 
     print("Mod restored!")
 
-def process_mod(mod_folder: str) -> None:
+def process_mod(mod_folder: str) -> dict:
     """
     Process all atlas files and its corresponding PNG that are needed to fix in a mod.
     Walk through all of the atlas files in the mod folder,
@@ -236,39 +236,62 @@ def process_mod(mod_folder: str) -> None:
 
     Args:
         mod_folder: Path to the root of the mod folder
+
+    Returns:
+        Dict with status: "success", "skipped", or "error"
     """
 
-    create_backup(mod_folder)
+    mod_name = os.path.basename(mod_folder)
 
-    mod_structure = find_skin_mod_structure(mod_folder)
+    try:
+        create_backup(mod_folder)
+        mod_structure = find_skin_mod_structure(mod_folder)
 
-    if not mod_structure.get("is_type_a"):
-        print("Skin does not have custom spine, no need to fix!")
-        return
-    else:
-        atlas_folder = mod_structure.get("atlas_folder")
-        png_variant_folders = mod_structure.get("png_variant_folders")
-        target_suffixes = [".sprite.combat.atlas", ".sprite.walk.atlas", ".sprite.idle.atlas"]
-        atlas_files = os.listdir(atlas_folder)
+        if not mod_structure.get("is_type_a"):
+            print("Skin does not have custom spine, no need to fix!")
+            return {"status": "skipped", "mod_name": mod_name, "reason": "No custom spine"}
+        else:
+            atlas_folder = mod_structure.get("atlas_folder")
+            png_variant_folders = mod_structure.get("png_variant_folders")
+            target_suffixes = [".sprite.combat.atlas", ".sprite.walk.atlas", ".sprite.idle.atlas"]
+            atlas_files = os.listdir(atlas_folder)
 
-        for atlas in atlas_files:
-            if any(atlas.endswith(suffix) for suffix in target_suffixes):
-                atlas_path = os.path.join(atlas_folder, atlas)
-                sprite_sheet = process_atlas(atlas_path)
-                
-                if sprite_sheet is None:
-                    continue
+            for atlas in atlas_files:
+                if any(atlas.endswith(suffix) for suffix in target_suffixes):
+                    atlas_path = os.path.join(atlas_folder, atlas)
+                    sprite_sheet = process_atlas(atlas_path)
+                    
+                    if sprite_sheet is None:
+                        continue
 
-                for png_folder in png_variant_folders:
-                    resize_png(png_folder, sprite_sheet)
+                    for png_folder in png_variant_folders:
+                        resize_png(png_folder, sprite_sheet)
+            
+            print(f"Success: '{mod_name}' processed")
+            return {"status": "success", "mod_name": mod_name}
+                        
+    except OSError as e:
+        print(f"Error '{mod_name}': File system error - {e}")
+        return {"status": "error", "mod_name": mod_name, "reason": str(e)}
+    except (ValueError, IndexError) as e:
+        print(f"Error '{mod_name}': Invalid mod structure - {e}")
+        return {"status": "error", "mod_name": mod_name, "reason": str(e)}
+    except Exception as e:
+        print(f"Error '{mod_name}': Unexpected error - {e}")
+        return {"status": "error", "mod_name": mod_name, "reason": str(e)}
 
-def process_multiple_mods(mod_folders: list) -> None:
+def process_multiple_mods(mod_folders: list) -> dict:
     """
     Process all the mods in the provided mod folder
 
     Args:
         mod_folders: list of single mod folders in the whole mod folder
+
+    Returns:
+        Dict with status: "success", "skipped", or "error"
     """
+    results = {"success": [], "skipped": [], "error": []}
 
     for mod_folder in mod_folders:
-        process_mod(mod_folder)
+        result = process_mod(mod_folder)
+        results[result["status"]].append(result)
