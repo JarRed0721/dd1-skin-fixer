@@ -271,14 +271,23 @@ def process_mod(mod_folder: str) -> dict:
             return {"status": "success", "mod_name": mod_name}
                         
     except OSError as e:
-        print(f"Error '{mod_name}': File system error - {e}")
-        return {"status": "error", "mod_name": mod_name, "reason": str(e)}
+        if isinstance(e, FileNotFoundError):
+            reason = "Missing required folder (no 'heroes' folder found)"
+        elif isinstance(e, PermissionError):
+            reason = "Permission denied - close any open files and try again"
+        else:
+            reason = "File system error"
+    
+        print(f"Error '{mod_name}': {reason} - {e}")
+        return {"status": "error", "mod_name": mod_name, "reason": reason}
     except (ValueError, IndexError) as e:
-        print(f"Error '{mod_name}': Invalid mod structure - {e}")
-        return {"status": "error", "mod_name": mod_name, "reason": str(e)}
+        reason = "Invalid mod structure - could not parse atlas file"
+        print(f"Error '{mod_name}': {reason} - {e}")
+        return {"status": "error", "mod_name": mod_name, "reason": reason}
     except Exception as e:
-        print(f"Error '{mod_name}': Unexpected error - {e}")
-        return {"status": "error", "mod_name": mod_name, "reason": str(e)}
+        reason = "Unexpected error"
+        print(f"Error '{mod_name}': {reason} - {e}")
+        return {"status": "error", "mod_name": mod_name, "reason": reason}
 
 def process_multiple_mods(mod_folders: list) -> dict:
     """
@@ -295,3 +304,5 @@ def process_multiple_mods(mod_folders: list) -> dict:
     for mod_folder in mod_folders:
         result = process_mod(mod_folder)
         results[result["status"]].append(result)
+
+    return results

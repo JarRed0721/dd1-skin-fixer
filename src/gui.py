@@ -33,18 +33,73 @@ class ModFixerApp(tk.Tk):
 
     def on_process_click(self):
         parent_folder = self.mod_path_entry.get()
+        
+        if not parent_folder:
+            messagebox.showerror("Error", "Please select a mod folder first.")
+            return
+        
+        if not os.path.exists(parent_folder):
+            messagebox.showerror("Error", f"Folder does not exist:\n{parent_folder}")
+            return
+
         mod_folders = [os.path.join(parent_folder, d) for d in os.listdir(parent_folder) 
                    if os.path.isdir(os.path.join(parent_folder, d))]
-        atlas.process_multiple_mods(mod_folders)
-        messagebox.showinfo("Success","All mods processed!")
+        
+        if not mod_folders:
+            messagebox.showwarning("Warning", "No subfolders found in the selected folder.")
+            return
+
+        results = atlas.process_multiple_mods(mod_folders)
+
+        success_count = len(results["success"])
+        skipped_count = len(results["skipped"])
+        error_count = len(results["error"])
+    
+        message = f"Processing complete!\n\n"
+        message += f"Success: {success_count}\n"
+        message += f"Skipped: {skipped_count}\n"
+        message += f"Errors: {error_count}"
+
+        if results["error"]:
+            message += "\n\nFailed mods:\n"
+            for err in results["error"]:
+                message += f"• {err['mod_name']}: {err['reason']}\n"
+
+        if results["skipped"]:
+            message += "\n\nSkipped mods:\n"
+            for skip in results["skipped"]:
+                message += f"• {skip['mod_name']}: {skip['reason']}\n"
+        
+        messagebox.showinfo("Results", message)
     
     def on_restore_click(self):
         parent_folder = self.mod_path_entry.get()
+
+        if not parent_folder:
+            messagebox.showerror("Error", "Please select a mod folder first.")
+            return
+        
+        if not os.path.exists(parent_folder):
+            messagebox.showerror("Error", f"Folder does not exist:\n{parent_folder}")
+            return
+
         mod_folders = [os.path.join(parent_folder, d) for d in os.listdir(parent_folder) 
                    if os.path.isdir(os.path.join(parent_folder, d))]
+        
+        if not mod_folders:
+            messagebox.showwarning("Warning", "No subfolders found.")
+            return
+    
+        restored = 0
+
         for mod_folder in mod_folders:
-            atlas.restore_backup(mod_folder)
-        messagebox.showinfo("Success","All mods restored!")
+            try:
+                atlas.restore_backup(mod_folder)
+                restored += 1
+            except Exception as e:
+                print(f"Could not restore {os.path.basename(mod_folder)}: {e}")    
+
+        messagebox.showinfo("Success", f"Restored {restored} mod(s)!")
 
     def on_browse_click(self):
         folder = filedialog.askdirectory()
