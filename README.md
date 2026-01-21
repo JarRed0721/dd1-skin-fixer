@@ -4,6 +4,10 @@ A tool that fixes aliasing (jagged edges) in Darkest Dungeon 1 skin mods by resi
 
 ![DD1 Skin Mod Fixer](images/DD1_Skin_Fixer_EN.png)
 
+## 中文说明
+
+[点击这里查看中文文档](README_CN.md)
+
 ## The Problem
 
 Many DD1 skin mods have aliasing issues - jagged, flickering edges on characters. This happens because the sprite sheets are too large for the game engine to handle properly (Nyquist frequency issue).
@@ -45,7 +49,3 @@ Mods that does not has reskin will be skipped.
 ## License
 
 MIT License - feel free to use and modify.
-
-## 中文说明
-
-[点击这里查看中文文档](README_CN.md)
