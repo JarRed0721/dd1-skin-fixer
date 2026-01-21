@@ -4,17 +4,23 @@ from tkinter import messagebox
 import atlas_parser as atlas
 import os
 import ctypes
+import sys
 
 window_title = "DD1 Skin Mod Fixer"
 window_size = "545x150"
 
 class ModFixerApp(tk.Tk):
 
+    def resource_path(self, relative_path):
+        if hasattr(sys, '_MEIPASS'):
+            return os.path.join(sys._MEIPASS, relative_path)
+        return os.path.join(os.path.dirname(__file__), relative_path)
+
     def __init__(self):
         super().__init__()
         self.title(window_title)
         self.geometry(window_size)
-        self.iconbitmap("assets/preview_icon.ico")
+        self.iconbitmap(self.resource_path("assets/preview_icon.ico"))
         self.resizable(False, False)
         self.setup_widgets()
     
