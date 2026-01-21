@@ -42,8 +42,10 @@ If something goes wrong:
 ## Supported Mods
 
 This tool works on skin mods that include custom Spine animations, 
-works for both new hero class mods and vanilla skin replacement mods. 
+works for both new hero class mods and vanilla skin replacement mods.
+
 Mods that does not has reskin will be skipped.
+
 (Monster Reskin Mods support in progress) 
 
 ## License
