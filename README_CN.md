@@ -18,7 +18,7 @@
 
 ## 下载
 
-下载最新版本：[DD1SkinFixer.exe](https://github.com/YourUsername/dd1-skin-fixer/releases)
+下载最新版本：[DD1SkinFixer.exe](https://github.com/JarRed0721/dd1-skin-fixer/releases)
 
 ## 使用方法
 

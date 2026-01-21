@@ -22,7 +22,7 @@ This tool automatically:
 
 ## Download
 
-Download the latest release: [DD1SkinFixer.exe](https://github.com/YourUsername/dd1-skin-fixer/releases)
+Download the latest release: [DD1SkinFixer.exe](https://github.com/JarRed0721/dd1-skin-fixer/releases)
 
 ## Usage
 
