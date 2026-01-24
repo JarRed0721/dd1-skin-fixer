@@ -106,15 +106,27 @@ class ModFixerApp(tk.Tk):
             return
     
         restored = 0
+        skipped = 0
+        errors = 0
 
         for mod_folder in mod_folders:
             try:
-                atlas.restore_backup(mod_folder)
-                restored += 1
+                if atlas.restore_backup(mod_folder):
+                    restored += 1
+                else:
+                    skipped += 1
             except Exception as e:
                 print(f"Could not restore {os.path.basename(mod_folder)}: {e}")    
 
-        messagebox.showinfo("Success", f"Restored {restored} mod(s)!")
+        message = f"Restored: {restored}\nNo backup found: {skipped}"
+        if errors > 0:
+            message += f"\nErrors: {errors}"
+        if restored > 0:
+            messagebox.showinfo("Done", message)
+        elif errors > 0:
+            messagebox.showerror("Error", message)
+        else:
+            messagebox.showwarning("Warning", message)
 
     def on_browse_click(self):
         folder = filedialog.askdirectory()

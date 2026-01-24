@@ -1,6 +1,7 @@
 from PIL import Image
 import os
 import shutil
+import xml.etree.ElementTree as ET
 
 def find_skin_mod_structure(mod_folder: str) -> dict:
     """
@@ -13,7 +14,7 @@ def find_skin_mod_structure(mod_folder: str) -> dict:
         Dictionary containing:
         - atlas_folder: Path to atlas files
         - png_variant_folders: List of paths to PNG variant folders
-        - is_type_a: Whether this mod has custom atlas files
+        - is_processable: Whether this mod has custom atlas files
     """
     png_variant_folders = []
     atlas_folder = None
@@ -21,7 +22,7 @@ def find_skin_mod_structure(mod_folder: str) -> dict:
     for root, dirs, files in os.walk(mod_folder):
             if 'backup' in dirs:
                 dirs.remove('backup')
-            elif any(f.endswith('.atlas') for f in files) and os.path.basename(root) == "anim":
+            elif any(f.endswith('.atlas') for f in files) and os.path.basename(root) == "anim" and "heroes" in root:
                 atlas_folder = root
             elif any(f.endswith('_portrait_roster.png') for f in files):
                 png_folder = os.path.join(root, "anim")
@@ -30,9 +31,46 @@ def find_skin_mod_structure(mod_folder: str) -> dict:
     return {
         "atlas_folder": atlas_folder,
         "png_variant_folders": png_variant_folders,
-        "is_type_a": atlas_folder is not None
+        "is_processable": atlas_folder is not None
     }
 
+def get_mod_info(mod_folder: str) -> dict:
+    """
+    Search specific infromation of a mod.
+
+    Args:
+        mod_folder: Path to the root of the mod folder
+
+    Returns:
+        Dictionary containing:
+        - Mod name
+        - Icon path
+        - Mod folder path
+        - Is processable
+    """
+    mod_info = {"mod_folder_path": mod_folder}
+    project_file = os.path.join(mod_folder, "project.xml")
+
+    if not os.path.exists(project_file):
+        return None
+    
+    root = ET.parse(project_file).getroot()
+    mod_title = root.find('Title')
+    if mod_title is not None:
+        mod_name = mod_title.text
+        mod_info["mod_name"] = mod_name
+
+    icon_path = os.path.join(mod_folder, "preview_icon.png")
+    if os.path.exists(icon_path):
+        mod_info["icon_path"] = icon_path
+    
+    else:
+        mod_info["icon_path"] = None
+
+    mod_info["is_processable"] = find_skin_mod_structure(mod_folder).get("is_processable")    
+
+    return mod_info
+    
 def process_atlas(atlas_path: str) -> dict:
     """
     Process a single atlas file.
@@ -195,23 +233,30 @@ def create_backup(mod_folder: str) -> None:
     print(f"Backup created at {backup_folder}")
     return True
 
-def restore_backup(mod_folder: str) -> None:
+def restore_backup(mod_folder: str) -> bool:
     """
     Restore the heroes folder from backup.
     
     Args:
         mod_folder: Root folder of the mod
     
+    Returns:
+        True if restored successfully, False if no backup found
     """
+
     heroes_folder = os.path.join(mod_folder, "heroes")
     backup_folder = os.path.join(mod_folder, "backup")
 
-    create_backup(mod_folder)
+    if not os.path.exists(backup_folder):
+        print(f"No backup found for {os.path.basename(mod_folder)}")
+        return False
+
     shutil.rmtree(heroes_folder)
     shutil.copytree(backup_folder, heroes_folder)
     shutil.rmtree(backup_folder)
 
-    print("Mod restored!")
+    print(f"Mod restored: {os.path.basename(mod_folder)}")
+    return True
 
 def process_mod(mod_folder: str) -> dict:
     """
@@ -233,7 +278,7 @@ def process_mod(mod_folder: str) -> dict:
         create_backup(mod_folder)
         mod_structure = find_skin_mod_structure(mod_folder)
 
-        if not mod_structure.get("is_type_a"):
+        if not mod_structure.get("is_processable"):
             return {"status": "skipped", "mod_name": mod_name, "reason": "No custom spine or not a skin mod"}
         else:
             atlas_folder = mod_structure.get("atlas_folder")
@@ -262,7 +307,6 @@ def process_mod(mod_folder: str) -> dict:
             reason = "Permission denied - close any open files and try again"
         else:
             reason = "File system error"
-    
         print(f"Error '{mod_name}': {reason} - {e}")
         return {"status": "error", "mod_name": mod_name, "reason": reason}
     except (ValueError, IndexError) as e:
