@@ -147,38 +147,6 @@ def process_atlas(atlas_path: str) -> dict:
         sprite_sheet["scale"] = scale
         sprite_sheet["png_file"] = png_file
 
-    # Atlas file header format:
-    # (empty line)
-    # crusader.sprite.idle.png
-    # size: 800,800
-    # format: RGBA8888
-    # filter: Linear,Linear
-    # repeat: none
-    with open(atlas_path, "w") as f:
-        f.write("\n")
-        f.write(f"{png_file}\n")
-        f.write(f"size: {round(sprite_sheet['sheet_width'])},{round(sprite_sheet['sheet_height'])}\n")
-        f.write("format: RGBA8888\n")
-        f.write("filter: Linear,Linear\n")
-        f.write("repeat: none\n")
-
-        # Sprite entry format:
-        # sprite name
-        #   rotate: false
-        #   xy: 2, 27
-        #   size: 28, 56
-        #   orig: 28, 56
-        #   offset: 0, 0
-        #   index: -1
-        for sprite in sprites:
-            f.write(f"{sprite['name']}\n")
-            f.write(f"  rotate: {sprite['rotate']}\n")
-            f.write(f"  xy: {sprite['x']}, {sprite['y']}\n")
-            f.write(f"  size: {sprite['width']},{sprite['height']}\n")
-            f.write(f"  orig: {sprite['width']},{sprite['height']}\n")
-            f.write("  offset: 0, 0\n")
-            f.write("  index: -1\n")
-
     print(f"  Output size: {round(sprite_sheet['sheet_width'])} x {round(sprite_sheet['sheet_height'])}")
 
     return sprite_sheet
